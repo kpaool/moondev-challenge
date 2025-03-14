@@ -98,6 +98,22 @@ export default function EvaluateSubmission() {
     }
   }, [id]);
 
+  const handleUpdates = (payload:any) => {
+    if(submission?.id==payload.new.id){
+      setSubmission(payload.new)
+    }
+  }
+  
+  supabase
+    .channel('developer_submissions')
+    .on('postgres_changes', { 
+      event: 'UPDATE', 
+      schema: 'public', 
+      table: 'developer_submissions',
+    }, handleUpdates)
+    .subscribe()
+
+
   useEffect(()=>{
     getSupabaseImage(submission?.profile_picture_url??'')
     getSupabaseAsset(submission?.source_code_url??'')

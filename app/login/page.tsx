@@ -39,7 +39,13 @@ export default function Login() {
     
 
     try {
-        await login(formData);
+        const result = await login(formData);
+        if(result.sucess){
+          toast.success("Log in successful, redirecting you to platform")
+          router.push("/")
+        }else{
+          toast.error(result.error?.message)
+        }
     //   const { data, error } = await supabase.auth.signInWithPassword({
     //     email,
     //     password,

@@ -70,6 +70,7 @@ type _application = {
   "updated_at": string
 };
 
+
 export default function DeveloperSubmissions() {
   const supabase = createClient()
   const router = useRouter();
@@ -78,6 +79,38 @@ export default function DeveloperSubmissions() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentStatus, setCurrentStatus] = useState('all');
 
+  const fetchSubmissions = async () => {
+    setLoading(true);
+    
+    let query = supabase.from('developer_submissions').select('*');
+    
+    if (currentStatus !== 'all') {
+      query = query.eq('status', currentStatus);
+    }
+    
+    const { data, error } = await query.order('submission_date', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching submissions:', error);
+    } else {
+      setSubmissions(data || []);
+    }
+    
+    setLoading(false);
+  };
+
+  
+  
+  supabase
+      .channel('developer_submissions')
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'developer_submissions',
+      }, fetchSubmissions)
+      .subscribe()
+
+  
   useEffect(() => {
     fetchSubmissions();
     checkUser()
@@ -115,26 +148,6 @@ export default function DeveloperSubmissions() {
       setLoading(false);
     };
 
-
-  const fetchSubmissions = async () => {
-    setLoading(true);
-    
-    let query = supabase.from('developer_submissions').select('*');
-    
-    if (currentStatus !== 'all') {
-      query = query.eq('status', currentStatus);
-    }
-    
-    const { data, error } = await query.order('submission_date', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching submissions:', error);
-    } else {
-      setSubmissions(data || []);
-    }
-    
-    setLoading(false);
-  };
 
   const filteredSubmissions = submissions.filter(submission => {
     const fullName = submission.full_name?.toLowerCase() || '';
