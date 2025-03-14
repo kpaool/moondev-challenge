@@ -1,9 +1,9 @@
 "use client"
 // pages/submissions/evaluate/[id].tsx
-import { useState, useEffect, SetStateAction } from 'react';
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+// import { createClient } from '@supabase/supabase-js';
 import { 
   Card, 
   CardContent, 
@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { toast } from "sonner"
+import { createClient } from '@/lib/supabase/client'
 import { 
   ArrowLeft, 
   Download, 
@@ -51,12 +52,6 @@ import {
   Clock
 } from 'lucide-react';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-
 
 
 // Status badge color mapping
@@ -67,11 +62,28 @@ const statusColorMap = {
   'reviewing': 'bg-blue-100 text-blue-800',
 };
 
+type _application = {
+  "id": string,
+  "user_id":string,
+  "full_name": string,
+  "phone_number": string,
+  "location": string,
+  "email": string,
+  "hobbies": string,
+  "profile_picture_url": string,
+  "source_code_url": string,
+  "submission_date": string,
+  "status": "pending" | "approved" | 'rejected' |"reviewing",
+  "evaluator_notes": string,
+  "created_at": string,
+  "updated_at": string
+};
+
 export default function EvaluateSubmission() {
   const router = useRouter();
- 
+  const supabase = createClient() 
   
-  const [submission, setSubmission] = useState<any>({});
+  const [submission, setSubmission] = useState<_application | null>(null);
   const [loading, setLoading] = useState(true);
   const [evaluatorNotes, setEvaluatorNotes] = useState('');
   const [profilePic, setProfilePic] = useState('');
@@ -87,19 +99,52 @@ export default function EvaluateSubmission() {
   }, [id]);
 
   useEffect(()=>{
-    getSupabaseImage(submission.profile_picture_url)
-    getSupabaseAsset(submission.source_code_url)
+    getSupabaseImage(submission?.profile_picture_url??'')
+    getSupabaseAsset(submission?.source_code_url??'')
+    checkUser()
   },[submission])
+
+  const checkUser = async () => {
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.getUser()
+    if (error || !data?.user) {
+      router.push('/login')
+    }
+    const user=data?.user
+
+    if (!user) {
+      toast.error("There is no logged in user")
+      router.push('/login');
+      return;
+    }
+
+    // Check if user is a developer
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || profileData?.role !== 'evaluator') {
+      // Not authorized as developer, redirect
+      toast.error("Only evaluators can access this resource")        
+      router.push('/login');
+      return;
+    }
+
+    setLoading(false);
+  };
   
 
   const getSupabaseAsset = async (assetId:string)=>{
     const data=  await supabase.storage.from(process.env.NEXT_PUBLIC_SUPABASE_CODE_STORAGE as string).getPublicUrl(assetId).data
-    let url = await data.publicUrl
+    const url = await data.publicUrl
     setCode(url)
   }
   const getSupabaseImage = async (imgId:string)=>{
     const data=  await supabase.storage.from(process.env.NEXT_PUBLIC_SUPABASE_PP_STORAGE as string).getPublicUrl(imgId).data
-    let url = await data.publicUrl
+    const url = await data.publicUrl
     setProfilePic(url)
   }
 
@@ -125,7 +170,7 @@ export default function EvaluateSubmission() {
       }
       
       return { success: true };
-    } catch (error:any) {
+    } catch (error) {
       console.error('Error sending email:', error);
       return { error: true, message: error.message };
     }

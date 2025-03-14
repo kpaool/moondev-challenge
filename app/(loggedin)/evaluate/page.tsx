@@ -1,7 +1,8 @@
 "use client"
 // pages/index.tsx
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import { 
   Card, 
   CardContent, 
@@ -41,11 +42,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Search, MoreHorizontal, Filter, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client'
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Status badge color mapping
 const statusColorMap = {
@@ -55,16 +53,68 @@ const statusColorMap = {
   'reviewing': 'bg-blue-100 text-blue-800',
 };
 
+type _application = {
+  "id": string,
+  "user_id":string,
+  "full_name": string,
+  "phone_number": string,
+  "location": string,
+  "email": string,
+  "hobbies": string,
+  "profile_picture_url": string,
+  "source_code_url": string,
+  "submission_date": string,
+  "status": "pending" | "approved" | 'rejected' |"reviewing",
+  "evaluator_notes": string,
+  "created_at": string,
+  "updated_at": string
+};
+
 export default function DeveloperSubmissions() {
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const supabase = createClient()
+  const router = useRouter();
+  const [submissions, setSubmissions] = useState<_application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [images, setImages] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [currentStatus, setCurrentStatus] = useState('all');
 
   useEffect(() => {
     fetchSubmissions();
+    checkUser()
   }, [currentStatus]);
+
+    const checkUser = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.getUser()
+      if (error || !data?.user) {
+        router.push('/login')
+      }
+      const user=data?.user
+
+      if (!user) {
+        toast.error("There is no logged in user")
+        router.push('/login');
+        return;
+      }
+
+      // Check if user is a developer
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || profileData?.role !== 'evaluator') {
+        // Not authorized as developer, redirect
+        toast.error("Only evaluators can access this resource")        
+        router.push('/login');
+        return;
+      }
+
+      setLoading(false);
+    };
+
 
   const fetchSubmissions = async () => {
     setLoading(true);
