@@ -162,7 +162,7 @@ export default function Register() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="developer">Developer</SelectItem>
-                      <SelectItem value="evaluator">Evaluator</SelectItem>
+                      {/* <SelectItem value="evaluator">Evaluator</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>

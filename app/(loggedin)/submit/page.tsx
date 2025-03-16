@@ -345,7 +345,7 @@ export default function DeveloperSubmit() {
       
       // Redirect after success
       setTimeout(() => {
-        router.push('/developer-dashboard');
+        router.push('/');
       }, 3000);
       
     } catch (error: any) {

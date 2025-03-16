@@ -96,19 +96,19 @@ export default async function Home() {
       <footer className="py-6 border-t bg-background">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            © 2025 DevEval. All rights reserved.
+            © 2025 MoonDev. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <Link href="/about" className="text-sm text-muted-foreground hover:underline">
+            <Link href="#" className="text-sm text-muted-foreground hover:underline">
               About
             </Link>
-            <Link href="/privacy" className="text-sm text-muted-foreground hover:underline">
+            <Link href="#" className="text-sm text-muted-foreground hover:underline">
               Privacy
             </Link>
-            <Link href="/terms" className="text-sm text-muted-foreground hover:underline">
+            <Link href="#" className="text-sm text-muted-foreground hover:underline">
               Terms
             </Link>
-            <Link href="/contact" className="text-sm text-muted-foreground hover:underline">
+            <Link href="#" className="text-sm text-muted-foreground hover:underline">
               Contact
             </Link>
           </div>
